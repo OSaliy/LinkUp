@@ -35,6 +35,7 @@ export default function setupSocket(app) {
       select: { roomId: true },
     })
     memberships.forEach(({ roomId }) => socket.join(`room:${roomId}`))
+    socket.join(`user:${userId}`)
 
     socket.on('activity', () => {
       presenceService.activity(userId, socket.id, () => {
@@ -58,6 +59,4 @@ export default function setupSocket(app) {
   function broadcastPresence(userId, status) {
     io.emit('presence', { userId, status })
   }
-
-  app.decorate('io', io)
 }

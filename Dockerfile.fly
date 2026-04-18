@@ -1,0 +1,27 @@
+# Stage 1: build React client
+FROM node:20-alpine AS client-build
+WORKDIR /client
+COPY client/package.json ./
+RUN npm install
+COPY client/ ./
+RUN npm run build
+
+# Stage 2: build server
+FROM node:20-alpine AS server
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+COPY server/package.json ./
+COPY server/prisma ./prisma/
+RUN npm install
+
+COPY server/src ./src/
+
+# Copy built client into server's public dir
+COPY --from=client-build /client/dist ./public/
+
+RUN mkdir -p /app/uploads
+
+EXPOSE 3000
+
+CMD ["node", "src/index.js"]

@@ -41,10 +41,14 @@ export default async function authRoutes(app) {
   app.post('/login', async (req, reply) => {
     const { email, password, remember } = req.body
     if (!email || !password) {
-      return reply.code(400).send({ error: 'email and password required' })
+      return reply.code(400).send({ error: 'email/username and password required' })
     }
 
-    const user = await app.db.user.findUnique({ where: { email } })
+    // Accept either email or username in the email field
+    const isEmail = email.includes('@')
+    const user = await app.db.user.findFirst({
+      where: isEmail ? { email } : { username: email },
+    })
     if (!user || user.deletedAt) return reply.code(401).send({ error: 'Invalid credentials' })
 
     const valid = await bcrypt.compare(password, user.passwordHash)

@@ -1,14 +1,16 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import EmojiPicker from 'emoji-picker-react'
+import api from '../api'
 
-export default function MessageInput({ onSend, replyTo, onCancelReply }) {
+export default function MessageInput({ onSend, replyTo, onCancelReply, roomId }) {
   const [content, setContent] = useState('')
   const [showEmoji, setShowEmoji] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const fileRef = useRef(null)
 
   const submit = (e) => {
     e?.preventDefault()
-    if (!content.trim()) return
+    if (!content.trim() || uploading) return
     onSend(content.trim())
     setContent('')
     setShowEmoji(false)
@@ -21,57 +23,102 @@ export default function MessageInput({ onSend, replyTo, onCancelReply }) {
     }
   }
 
+  const uploadFiles = useCallback(async (files) => {
+    if (!files?.length || !roomId) return
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('content', content.trim())
+      for (const f of files) fd.append('file', f)
+      await api.post(`/files/upload/${roomId}`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setContent('')
+    } catch (err) {
+      alert(err.response?.data?.error || 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }, [roomId, content])
+
+  const onFileChange = (e) => {
+    const files = [...e.target.files]
+    if (files.length) uploadFiles(files)
+    e.target.value = ''
+  }
+
   const onPaste = async (e) => {
     const items = [...e.clipboardData.items]
     const imageItem = items.find(i => i.type.startsWith('image/'))
     if (imageItem) {
       e.preventDefault()
       const file = imageItem.getAsFile()
-      // TODO: upload pasted image
+      if (file) await uploadFiles([file])
     }
   }
 
   return (
-    <div className="p-3 border-t border-gray-700 bg-gray-800">
+    <div className="p-3 border-t border-gray-700 bg-gray-850 flex-shrink-0">
       {replyTo && (
-        <div className="flex items-center gap-2 mb-2 text-xs text-gray-400 bg-gray-700 rounded px-2 py-1">
+        <div className="flex items-center gap-2 mb-2 text-xs text-gray-400 bg-gray-700 rounded px-2 py-1.5 border-l-2 border-indigo-500">
           <span>Replying to <span className="text-indigo-400 font-semibold">{replyTo.author.username}</span>:</span>
-          <span className="truncate flex-1">{replyTo.content}</span>
-          <button onClick={onCancelReply} className="hover:text-white ml-auto">✕</button>
+          <span className="truncate flex-1 text-gray-300">{replyTo.content}</span>
+          <button onClick={onCancelReply} className="hover:text-white ml-auto shrink-0">✕</button>
         </div>
       )}
 
       {showEmoji && (
-        <div className="absolute bottom-16 left-4">
+        <div className="absolute bottom-20 left-4 z-50">
           <EmojiPicker
             theme="dark"
             onEmojiClick={(e) => setContent(c => c + e.emoji)}
+            height={380}
+            width={320}
           />
         </div>
       )}
 
       <form onSubmit={submit} className="flex gap-2 items-end">
-        <button type="button" onClick={() => setShowEmoji(s => !s)}
-          className="text-gray-400 hover:text-white text-xl pb-1.5">😊</button>
-        <button type="button" onClick={() => fileRef.current?.click()}
-          className="text-gray-400 hover:text-white text-xl pb-1.5">📎</button>
-        <input ref={fileRef} type="file" className="hidden" multiple
-          onChange={e => {
-            // TODO: implement file upload
-            console.log('files', e.target.files)
-          }}
+        <button
+          type="button"
+          onClick={() => setShowEmoji(s => !s)}
+          className={`text-xl pb-1.5 transition-colors ${showEmoji ? 'text-indigo-400' : 'text-gray-400 hover:text-white'}`}
+          title="Emoji"
+        >
+          😊
+        </button>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="text-gray-400 hover:text-white text-xl pb-1.5 transition-colors disabled:opacity-40"
+          title="Attach file"
+        >
+          📎
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          className="hidden"
+          multiple
+          accept="*/*"
+          onChange={onFileChange}
         />
         <textarea
-          className="flex-1 bg-gray-700 rounded px-3 py-2 text-sm resize-none min-h-[40px] max-h-32"
-          placeholder="Message... (Shift+Enter for newline)"
+          className="flex-1 bg-gray-700 rounded-lg px-3 py-2 text-sm resize-none min-h-[40px] max-h-32 focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder-gray-500"
+          placeholder={uploading ? 'Uploading…' : 'Message… (Shift+Enter for newline)'}
           value={content}
           onChange={e => setContent(e.target.value)}
           onKeyDown={onKeyDown}
           onPaste={onPaste}
           rows={1}
+          disabled={uploading}
         />
-        <button type="submit"
-          className="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded text-sm font-medium">
+        <button
+          type="submit"
+          disabled={!content.trim() || uploading}
+          className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        >
           Send
         </button>
       </form>

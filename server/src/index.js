@@ -6,6 +6,7 @@ import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import fastifySocketIo from 'fastify-socket.io'
 import { join, dirname } from 'path'
+import { existsSync } from 'fs'
 import { fileURLToPath } from 'url'
 
 import dbPlugin from './plugins/db.js'
@@ -22,11 +23,13 @@ import filesRoutes from './routes/files.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const UPLOADS_DIR = process.env.UPLOADS_DIR || join(__dirname, '../../uploads')
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost'
+const PUBLIC_DIR = join(__dirname, '../public')
+const serveClient = existsSync(PUBLIC_DIR)
 
 const app = Fastify({ logger: true })
 
 await app.register(fastifyCors, {
-  origin: CLIENT_URL,
+  origin: serveClient ? false : CLIENT_URL,
   credentials: true,
 })
 await app.register(fastifyCookie)
@@ -38,8 +41,17 @@ await app.register(fastifyStatic, {
   prefix: '/uploads/',
   decorateReply: false,
 })
+// Serve built React app when public/ dir exists (production / Fly deploy)
+if (serveClient) {
+  await app.register(fastifyStatic, {
+    root: PUBLIC_DIR,
+    prefix: '/',
+    decorateReply: false,
+    wildcard: false,
+  })
+}
 await app.register(fastifySocketIo, {
-  cors: { origin: CLIENT_URL, credentials: true },
+  cors: { origin: serveClient ? false : CLIENT_URL, credentials: true },
 })
 
 await app.register(dbPlugin)
@@ -53,6 +65,16 @@ await app.register(contactsRoutes, { prefix: '/api/contacts' })
 await app.register(filesRoutes, { prefix: '/api/files' })
 
 app.get('/api/health', async () => ({ ok: true }))
+
+// SPA fallback — serve index.html for all non-API routes
+if (serveClient) {
+  app.setNotFoundHandler((req, reply) => {
+    if (!req.url.startsWith('/api') && !req.url.startsWith('/socket.io') && !req.url.startsWith('/uploads')) {
+      return reply.sendFile('index.html', PUBLIC_DIR)
+    }
+    reply.code(404).send({ error: 'Not found' })
+  })
+}
 
 setupSocket(app)
 

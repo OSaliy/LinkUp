@@ -89,4 +89,11 @@ export const useChatStore = create((set, get) => ({
   setPresence: (userId, status) => {
     set(s => ({ presence: { ...s.presence, [userId]: status } }))
   },
+
+  removeRoom: (roomId) => {
+    set(s => ({
+      rooms: s.rooms.filter(r => r.id !== roomId),
+      activeRoomId: s.activeRoomId === roomId ? null : s.activeRoomId,
+    }))
+  },
 }))
