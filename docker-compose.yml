@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lynkup
+      POSTGRES_PASSWORD: lynkup
+      POSTGRES_DB: lynkup
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lynkup"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build: ./server
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://lynkup:lynkup@db:5432/lynkup
+      JWT_SECRET: change-me-in-production-please
+      NODE_ENV: production
+      PORT: 3000
+      CLIENT_URL: http://localhost
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    build: ./client
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+
+volumes:
+  pgdata:
+  uploads:
