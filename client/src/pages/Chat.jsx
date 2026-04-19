@@ -35,32 +35,35 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-900 text-gray-100">
-      {/* Mobile overlay */}
+
+      {/* ── DESKTOP sidebar (static, in flow) ── */}
+      <div className="hidden md:flex h-full">
+        <Sidebar onRoomSelect={() => {}} />
+      </div>
+
+      {/* ── MOBILE sidebar (fixed drawer) ── */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/60 z-20 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
-
-      {/* Sidebar — static in flow on desktop, full-height fixed drawer on mobile */}
       <div className={`
-        fixed inset-y-0 left-0 z-30 h-full
-        md:static md:translate-x-0
+        fixed inset-y-0 left-0 z-30 md:hidden h-full
         transform transition-transform duration-200 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <Sidebar onRoomSelect={() => setSidebarOpen(false)} />
       </div>
 
-      {/* Main area */}
+      {/* ── Main area ── */}
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        {/* Mobile top bar — always visible, hidden on desktop */}
-        <div className="flex items-center md:hidden bg-gray-850 bg-gray-800 border-b border-gray-700 px-3 py-3 flex-shrink-0 safe-top">
+
+        {/* Mobile top bar — hamburger + room name */}
+        <div className="flex items-center md:hidden bg-gray-800 border-b border-gray-700 px-3 py-2.5 flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg transition-colors mr-3 text-sm font-medium"
-            aria-label="Open menu"
+            className="text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg transition-colors mr-3 text-sm font-medium flex-shrink-0"
           >
             ☰ Menu
           </button>
@@ -73,13 +76,15 @@ export default function Chat() {
           </span>
         </div>
 
-        {/* Content */}
+        {/* Content row */}
         <div className="flex flex-1 overflow-hidden">
           {activeRoomId ? (
             <>
               <ChatWindow roomId={activeRoomId} room={activeRoom} />
               {activeRoom?.visibility !== 'DIRECT' && (
-                <MemberList roomId={activeRoomId} room={activeRoom} />
+                <div className="hidden md:block">
+                  <MemberList roomId={activeRoomId} room={activeRoom} />
+                </div>
               )}
             </>
           ) : (
