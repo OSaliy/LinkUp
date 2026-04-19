@@ -6,7 +6,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, ConfirmDialog } from './Mod
 export default function RoomModal({ room, currentUserId, onClose }) {
   const [tab, setTab] = useState('members')
   const { loadRooms, loadMembers } = useChatStore()
-  const members = useChatStore(s => s.members[room.id] || [])
+  const members = useChatStore(s => s.members[room.id]) ?? []
   const isOwner = room.ownerId === currentUserId
   const myMembership = members.find(m => m.userId === currentUserId)
   const isAdmin = myMembership?.role === 'ADMIN'
