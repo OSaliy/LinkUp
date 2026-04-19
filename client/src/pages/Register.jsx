@@ -13,7 +13,7 @@ export default function Register() {
     e.preventDefault()
     setError('')
     if (form.password !== form.confirm) { setError('Passwords do not match'); return }
-    if (form.password.length < 6) { setError('Password must be at least 6 characters'); return }
+    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return }
     setLoading(true)
     try {
       await register(form.email, form.username, form.password)
@@ -54,7 +54,7 @@ export default function Register() {
             />
             <input
               className="w-full bg-gray-700 border border-gray-600 px-3 py-2.5 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-              type="password" placeholder="Password (min 6 chars)"
+              type="password" placeholder="Password (min 8 chars)"
               value={form.password} onChange={set('password')} required
             />
             <input

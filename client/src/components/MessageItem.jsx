@@ -116,13 +116,15 @@ export default function MessageItem({ message, currentUserId, onReply, roomId, i
 
         {/* Action buttons */}
         <div className="opacity-0 group-hover:opacity-100 flex items-start gap-1 pt-0.5 transition-opacity shrink-0">
-          <button
-            onClick={() => onReply(message)}
-            className="text-gray-500 hover:text-gray-300 text-sm p-1 rounded hover:bg-gray-700 transition-colors"
-            title="Reply"
-          >
-            ↩
-          </button>
+          {onReply && (
+            <button
+              onClick={() => onReply(message)}
+              className="text-gray-500 hover:text-gray-300 text-sm p-1 rounded hover:bg-gray-700 transition-colors"
+              title="Reply"
+            >
+              ↩
+            </button>
+          )}
           {isOwn && !editing && (
             <button
               onClick={() => setEditing(true)}

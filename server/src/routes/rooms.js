@@ -22,11 +22,16 @@ export default async function roomsRoutes(app) {
       where: { userId: req.user.id },
       include: {
         room: {
-          select: { id: true, name: true, description: true, visibility: true, ownerId: true },
+          select: { id: true, name: true, description: true, visibility: true, ownerId: true, lockedAt: true, deletedAt: true },
         },
       },
     })
-    return memberships.filter(m => !m.room.deletedAt).map(m => ({ ...m.room, role: m.role }))
+    return memberships
+      .filter(m => !m.room.deletedAt)
+      .map(m => {
+        const { deletedAt: _d, ...room } = m.room
+        return { ...room, role: m.role }
+      })
   })
 
   // Get room
