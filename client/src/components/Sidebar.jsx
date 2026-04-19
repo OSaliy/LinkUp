@@ -7,7 +7,7 @@ import FriendsPanel from './FriendsPanel'
 import UserMenu from './UserMenu'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from './Modal'
 
-export default function Sidebar() {
+export default function Sidebar({ onRoomSelect }) {
   const { rooms, loadRooms, setActiveRoom, activeRoomId, unread } = useChatStore()
   const { user } = useAuthStore()
   const [showBrowse, setShowBrowse] = useState(false)
@@ -44,13 +44,13 @@ export default function Sidebar() {
         {/* Room list */}
         <div className="flex-1 overflow-y-auto py-2 space-y-1">
           {publicRooms.length > 0 && (
-            <RoomGroup label="Channels" rooms={publicRooms} active={activeRoomId} unread={unread} onSelect={setActiveRoom} onManage={setManagingRoom} />
+            <RoomGroup label="Channels" rooms={publicRooms} active={activeRoomId} unread={unread} onSelect={id => { setActiveRoom(id); onRoomSelect?.() }} onManage={setManagingRoom} />
           )}
           {privateRooms.length > 0 && (
-            <RoomGroup label="Private" rooms={privateRooms} active={activeRoomId} unread={unread} onSelect={setActiveRoom} onManage={setManagingRoom} />
+            <RoomGroup label="Private" rooms={privateRooms} active={activeRoomId} unread={unread} onSelect={id => { setActiveRoom(id); onRoomSelect?.() }} onManage={setManagingRoom} />
           )}
           {dms.length > 0 && (
-            <RoomGroup label="Direct Messages" rooms={dms} active={activeRoomId} unread={unread} onSelect={setActiveRoom} />
+            <RoomGroup label="Direct Messages" rooms={dms} active={activeRoomId} unread={unread} onSelect={id => { setActiveRoom(id); onRoomSelect?.() }} />
           )}
           {rooms.length === 0 && (
             <div className="px-4 py-8 text-center space-y-1">
@@ -266,7 +266,8 @@ function BrowseRoomsModal({ onClose, onJoined }) {
   const [rooms, setRooms] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const myRoomIds = useChatStore(s => new Set(s.rooms.map(r => r.id)))
+  const myRooms = useChatStore(s => s.rooms)
+  const myRoomIds = new Set(myRooms.map(r => r.id))
 
   const search = async (query) => {
     setLoading(true)
