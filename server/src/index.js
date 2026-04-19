@@ -6,7 +6,7 @@ import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import fastifySocketIo from 'fastify-socket.io'
 import { join, dirname } from 'path'
-import { existsSync } from 'fs'
+import { existsSync, createReadStream } from 'fs'
 import { fileURLToPath } from 'url'
 
 import dbPlugin from './plugins/db.js'
@@ -70,7 +70,8 @@ app.get('/api/health', async () => ({ ok: true }))
 if (serveClient) {
   app.setNotFoundHandler((req, reply) => {
     if (!req.url.startsWith('/api') && !req.url.startsWith('/socket.io') && !req.url.startsWith('/uploads')) {
-      return reply.sendFile('index.html', PUBLIC_DIR)
+      reply.header('Content-Type', 'text/html')
+      return reply.send(createReadStream(join(PUBLIC_DIR, 'index.html')))
     }
     reply.code(404).send({ error: 'Not found' })
   })
