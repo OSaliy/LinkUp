@@ -281,9 +281,8 @@ function BrowseRoomsModal({ onClose, onJoined }) {
     }
   }
 
-  useEffect(() => { search('') }, [])
   useEffect(() => {
-    const t = setTimeout(() => search(q), 300)
+    const t = setTimeout(() => search(q), q ? 300 : 0)
     return () => clearTimeout(t)
   }, [q])
 
