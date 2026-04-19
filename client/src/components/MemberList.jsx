@@ -119,7 +119,8 @@ export default function MemberList({ roomId, room }) {
 
                     {menuUserId === m.userId && canManage && (
                       <div
-                        className="absolute right-2 top-9 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-30 py-1 w-36 overflow-hidden"
+                        className="absolute right-0 top-9 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-30 py-1 w-40 overflow-hidden"
+                        style={{ right: '100%', marginRight: '4px', top: '0' }}
                         onClick={e => e.stopPropagation()}
                       >
                         {isOwner && (
