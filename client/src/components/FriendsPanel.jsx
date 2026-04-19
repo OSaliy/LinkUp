@@ -48,6 +48,11 @@ export default function FriendsPanel({ onClose }) {
     load()
   }
 
+  const blockUser = async (userId) => {
+    await api.post('/contacts/bans', { userId })
+    load()
+  }
+
   const acceptInvite = async (roomId) => {
     await api.post(`/rooms/${roomId}/invitations/accept`)
     await loadRooms()
@@ -121,6 +126,13 @@ export default function FriendsPanel({ onClose }) {
                     className="text-xs bg-gray-600 hover:bg-red-700 px-3 py-1.5 rounded-lg transition-colors"
                   >
                     Remove
+                  </button>
+                  <button
+                    onClick={() => blockUser(f.id)}
+                    className="text-xs bg-gray-600 hover:bg-red-900 px-3 py-1.5 rounded-lg transition-colors"
+                    title="Block user — removes friendship and freezes DM"
+                  >
+                    Block
                   </button>
                 </div>
               </div>
