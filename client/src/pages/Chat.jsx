@@ -56,13 +56,13 @@ export default function Chat() {
       {/* Main area */}
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         {/* Mobile top bar — always visible, hidden on desktop */}
-        <div className="flex items-center md:hidden bg-gray-900 border-b border-gray-700/50 px-3 py-2.5 flex-shrink-0">
+        <div className="flex items-center md:hidden bg-gray-850 bg-gray-800 border-b border-gray-700 px-3 py-3 flex-shrink-0 safe-top">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="text-gray-400 hover:text-white p-1.5 rounded transition-colors mr-2"
+            className="text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg transition-colors mr-3 text-sm font-medium"
             aria-label="Open menu"
           >
-            ☰
+            ☰ Menu
           </button>
           <span className="text-sm font-semibold text-gray-200 truncate">
             {activeRoom

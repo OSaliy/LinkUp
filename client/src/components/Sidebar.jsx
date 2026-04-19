@@ -32,7 +32,7 @@ export default function Sidebar({ onRoomSelect }) {
 
   return (
     <>
-      <div className="flex flex-col w-64 bg-gray-900 border-r border-gray-700/50 flex-shrink-0">
+      <div className="flex flex-col w-64 h-full bg-gray-900 border-r border-gray-700/50 flex-shrink-0">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-700/50">
           <span className="font-bold text-base tracking-tight text-white">LinkUp</span>
