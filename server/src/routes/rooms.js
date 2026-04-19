@@ -1,3 +1,8 @@
+import { rmSync } from 'fs'
+import { join } from 'path'
+
+const UPLOADS_DIR = process.env.UPLOADS_DIR || './uploads'
+
 export default async function roomsRoutes(app) {
   // List public rooms
   app.get('/', { preHandler: app.authenticate }, async (req) => {
@@ -88,6 +93,10 @@ export default async function roomsRoutes(app) {
 
     await app.db.room.update({ where: { id: room.id }, data: { deletedAt: new Date() } })
     app.io.to(`room:${room.id}`).emit('room:deleted', { roomId: room.id })
+
+    // Delete room's upload directory from disk (best-effort)
+    try { rmSync(join(UPLOADS_DIR, room.id), { recursive: true, force: true }) } catch {}
+
     return { ok: true }
   })
 

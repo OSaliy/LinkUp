@@ -6,11 +6,17 @@ export default function MessageInput({ onSend, replyTo, onCancelReply, roomId })
   const [content, setContent] = useState('')
   const [showEmoji, setShowEmoji] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [pendingFiles, setPendingFiles] = useState([]) // [{file, comment}]
   const fileRef = useRef(null)
 
   const submit = (e) => {
     e?.preventDefault()
-    if (!content.trim() || uploading) return
+    if (uploading) return
+    if (pendingFiles.length > 0) {
+      uploadFiles(pendingFiles)
+      return
+    }
+    if (!content.trim()) return
     onSend(content.trim())
     setContent('')
     setShowEmoji(false)
@@ -23,17 +29,21 @@ export default function MessageInput({ onSend, replyTo, onCancelReply, roomId })
     }
   }
 
-  const uploadFiles = useCallback(async (files) => {
-    if (!files?.length || !roomId) return
+  const uploadFiles = useCallback(async (items) => {
+    if (!items?.length || !roomId) return
     setUploading(true)
     try {
       const fd = new FormData()
       fd.append('content', content.trim())
-      for (const f of files) fd.append('file', f)
+      for (const { file, comment } of items) {
+        fd.append('file', file)
+        fd.append('comment', comment || '')
+      }
       await api.post(`/files/upload/${roomId}`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setContent('')
+      setPendingFiles([])
     } catch (err) {
       alert(err.response?.data?.error || 'Upload failed')
     } finally {
@@ -43,7 +53,7 @@ export default function MessageInput({ onSend, replyTo, onCancelReply, roomId })
 
   const onFileChange = (e) => {
     const files = [...e.target.files]
-    if (files.length) uploadFiles(files)
+    if (files.length) setPendingFiles(files.map(f => ({ file: f, comment: '' })))
     e.target.value = ''
   }
 
@@ -53,12 +63,30 @@ export default function MessageInput({ onSend, replyTo, onCancelReply, roomId })
     if (imageItem) {
       e.preventDefault()
       const file = imageItem.getAsFile()
-      if (file) await uploadFiles([file])
+      if (file) setPendingFiles([{ file, comment: '' }])
     }
   }
 
   return (
     <div className="p-3 border-t border-gray-700 bg-gray-850 flex-shrink-0">
+      {pendingFiles.length > 0 && (
+        <div className="mb-2 space-y-1.5 bg-gray-700/50 rounded-lg p-2">
+          {pendingFiles.map((item, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-xs text-gray-300 truncate max-w-[120px]" title={item.file.name}>
+                {item.file.type.startsWith('image/') ? '🖼' : '📎'} {item.file.name}
+              </span>
+              <input
+                className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="Optional comment…"
+                value={item.comment}
+                onChange={e => setPendingFiles(pf => pf.map((x, j) => j === i ? { ...x, comment: e.target.value } : x))}
+              />
+              <button onClick={() => setPendingFiles(pf => pf.filter((_, j) => j !== i))} className="text-gray-500 hover:text-red-400 text-xs transition-colors">✕</button>
+            </div>
+          ))}
+        </div>
+      )}
       {replyTo && (
         <div className="flex items-center gap-2 mb-2 text-xs text-gray-400 bg-gray-700 rounded px-2 py-1.5 border-l-2 border-indigo-500">
           <span>Replying to <span className="text-indigo-400 font-semibold">{replyTo.author.username}</span>:</span>
@@ -106,7 +134,7 @@ export default function MessageInput({ onSend, replyTo, onCancelReply, roomId })
         />
         <textarea
           className="flex-1 bg-gray-700 rounded-lg px-3 py-2 text-sm resize-none min-h-[40px] max-h-32 focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder-gray-500"
-          placeholder={uploading ? 'Uploading…' : 'Message… (Shift+Enter for newline)'}
+          placeholder={uploading ? 'Uploading…' : pendingFiles.length ? 'Optional message with file…' : 'Message… (Shift+Enter for newline)'}
           value={content}
           onChange={e => setContent(e.target.value)}
           onKeyDown={onKeyDown}
@@ -116,10 +144,10 @@ export default function MessageInput({ onSend, replyTo, onCancelReply, roomId })
         />
         <button
           type="submit"
-          disabled={!content.trim() || uploading}
+          disabled={(!content.trim() && pendingFiles.length === 0) || uploading}
           className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
-          Send
+          {uploading ? '…' : 'Send'}
         </button>
       </form>
     </div>

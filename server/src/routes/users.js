@@ -1,3 +1,8 @@
+import { rmSync } from 'fs'
+import { join } from 'path'
+
+const UPLOADS_DIR = process.env.UPLOADS_DIR || './uploads'
+
 export default async function usersRoutes(app) {
   app.get('/search', { preHandler: app.authenticate }, async (req) => {
     const { q } = req.query
@@ -40,6 +45,11 @@ export default async function usersRoutes(app) {
         data: { deletedAt: new Date() },
       }),
     ])
+
+    // Delete upload dirs for all owned rooms
+    for (const r of ownedRooms) {
+      try { rmSync(join(UPLOADS_DIR, r.id), { recursive: true, force: true }) } catch {}
+    }
 
     reply.clearCookie('session', { path: '/' })
     return { ok: true }

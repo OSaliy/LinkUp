@@ -20,10 +20,12 @@ export default async function filesRoutes(app) {
     const parts = req.parts()
     const attachments = []
     let messageContent = ''
+    const comments = [] // ordered list of comment fields matching file order
 
     for await (const part of parts) {
-      if (part.type === 'field' && part.fieldname === 'content') {
-        messageContent = part.value
+      if (part.type === 'field') {
+        if (part.fieldname === 'content') { messageContent = part.value; continue }
+        if (part.fieldname === 'comment') { comments.push(part.value || ''); continue }
         continue
       }
       if (part.type === 'file') {
@@ -54,9 +56,15 @@ export default async function filesRoutes(app) {
           storagePath: join(roomId, storedName),
           mimeType: part.mimetype,
           size,
-          comment: req.body?.comment || null,
+          commentIndex: attachments.length,
         })
       }
+    }
+
+    // Attach comments by index after streaming completes
+    for (const a of attachments) {
+      a.comment = comments[a.commentIndex] || null
+      delete a.commentIndex
     }
 
     if (attachments.length === 0) return reply.code(400).send({ error: 'No file provided' })
