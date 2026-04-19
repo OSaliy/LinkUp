@@ -86,6 +86,24 @@ export default async function contactsRoutes(app) {
     return { ok: true }
   })
 
+  // Remove friend by user ID
+  app.delete('/friends/:userId', { preHandler: app.authenticate }, async (req, reply) => {
+    const userId = req.user.id
+    const otherId = req.params.userId
+    const deleted = await app.db.friendship.deleteMany({
+      where: {
+        status: 'ACCEPTED',
+        OR: [
+          { requesterId: userId, addresseeId: otherId },
+          { requesterId: otherId, addresseeId: userId },
+        ],
+      },
+    })
+    if (deleted.count === 0) return reply.code(404).send({ error: 'Not found' })
+    app.io.to(`user:${otherId}`).emit('friend:removed', { userId })
+    return { ok: true }
+  })
+
   // Ban user
   app.post('/bans', { preHandler: app.authenticate }, async (req, reply) => {
     const { userId } = req.body
