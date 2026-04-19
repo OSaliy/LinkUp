@@ -46,54 +46,42 @@ export default function Chat() {
         />
       )}
 
-      {/* Sidebar — always visible on desktop, drawer on mobile */}
+      {/* Sidebar — static on desktop, full-height drawer on mobile */}
       <div className={`
-        fixed md:static inset-y-0 left-0 z-30
+        fixed inset-y-0 left-0 z-30 md:static md:translate-x-0
         transform transition-transform duration-200 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <Sidebar onRoomSelect={handleRoomSelect} />
       </div>
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden relative min-w-0">
-        {/* Mobile header with hamburger */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center md:hidden bg-gray-900 border-b border-gray-700/50 px-3 py-2.5">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-gray-400 hover:text-white p-1 rounded transition-colors mr-2"
-          >
-            ☰
-          </button>
-          <span className="text-sm font-medium text-gray-300 truncate">
-            {activeRoom
-              ? activeRoom.visibility === 'DIRECT'
-                ? activeRoom.name.replace('dm:', '').replace(':', ' / ')
-                : `# ${activeRoom.name}`
-              : 'LinkUp'}
-          </span>
-        </div>
-
         {activeRoomId ? (
-          <div className="flex flex-1 overflow-hidden pt-[44px] md:pt-0">
-            <ChatWindow roomId={activeRoomId} room={activeRoom} />
+          <>
+            <ChatWindow roomId={activeRoomId} room={activeRoom} mobileMenuButton={
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="md:hidden text-gray-400 hover:text-white p-1 rounded transition-colors mr-2 flex-shrink-0"
+              >
+                ☰
+              </button>
+            } />
             {activeRoom?.visibility !== 'DIRECT' && (
-              <div className="hidden lg:block">
-                <MemberList roomId={activeRoomId} room={activeRoom} />
-              </div>
+              <MemberList roomId={activeRoomId} room={activeRoom} />
             )}
-          </div>
+          </>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center text-center gap-3 text-gray-600 pt-[44px] md:pt-0">
+          <div className="flex flex-1 flex-col items-center justify-center text-center gap-3 text-gray-600">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden absolute top-3 left-3 text-gray-400 hover:text-white p-1 rounded transition-colors"
+            >
+              ☰
+            </button>
             <p className="text-5xl">💬</p>
             <p className="text-lg font-medium text-gray-500">Welcome to LinkUp</p>
             <p className="text-sm px-6">Select a room from the sidebar, or browse public rooms to join one.</p>
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="md:hidden mt-2 text-sm bg-indigo-700 hover:bg-indigo-600 px-4 py-2 rounded-lg transition-colors font-medium"
-            >
-              Open sidebar
-            </button>
           </div>
         )}
       </div>
