@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
-// Generic modal wrapper
+// Generic modal wrapper — renders into document.body via portal so it
+// always covers the full viewport regardless of parent stacking context
 export function Modal({ onClose, children, width = 'max-w-md' }) {
   const overlayRef = useRef(null)
 
@@ -10,7 +12,7 @@ export function Modal({ onClose, children, width = 'max-w-md' }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
@@ -19,7 +21,8 @@ export function Modal({ onClose, children, width = 'max-w-md' }) {
       <div className={`bg-gray-800 rounded-xl border border-gray-700 shadow-2xl w-full ${width} overflow-hidden`}>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

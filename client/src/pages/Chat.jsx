@@ -33,9 +33,6 @@ export default function Chat() {
     return () => { document.title = 'LinkUp' }
   }, [unread])
 
-  // Close sidebar when a room is selected on mobile
-  const handleRoomSelect = () => setSidebarOpen(false)
-
   return (
     <div className="flex h-screen overflow-hidden bg-gray-900 text-gray-100">
       {/* Mobile overlay */}
@@ -46,44 +43,53 @@ export default function Chat() {
         />
       )}
 
-      {/* Sidebar — static on desktop, full-height drawer on mobile */}
+      {/* Sidebar — static in flow on desktop, full-height fixed drawer on mobile */}
       <div className={`
-        fixed inset-y-0 left-0 z-30 md:static md:translate-x-0
+        fixed inset-y-0 left-0 z-30 h-full
+        md:static md:translate-x-0
         transform transition-transform duration-200 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <Sidebar onRoomSelect={handleRoomSelect} />
+        <Sidebar onRoomSelect={() => setSidebarOpen(false)} />
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-1 overflow-hidden relative min-w-0">
-        {activeRoomId ? (
-          <>
-            <ChatWindow roomId={activeRoomId} room={activeRoom} mobileMenuButton={
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="md:hidden text-gray-400 hover:text-white p-1 rounded transition-colors mr-2 flex-shrink-0"
-              >
-                ☰
-              </button>
-            } />
-            {activeRoom?.visibility !== 'DIRECT' && (
-              <MemberList roomId={activeRoomId} room={activeRoom} />
-            )}
-          </>
-        ) : (
-          <div className="flex flex-1 flex-col items-center justify-center text-center gap-3 text-gray-600">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="md:hidden absolute top-3 left-3 text-gray-400 hover:text-white p-1 rounded transition-colors"
-            >
-              ☰
-            </button>
-            <p className="text-5xl">💬</p>
-            <p className="text-lg font-medium text-gray-500">Welcome to LinkUp</p>
-            <p className="text-sm px-6">Select a room from the sidebar, or browse public rooms to join one.</p>
-          </div>
-        )}
+      {/* Main area */}
+      <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+        {/* Mobile top bar — always visible, hidden on desktop */}
+        <div className="flex items-center md:hidden bg-gray-900 border-b border-gray-700/50 px-3 py-2.5 flex-shrink-0">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-400 hover:text-white p-1.5 rounded transition-colors mr-2"
+            aria-label="Open menu"
+          >
+            ☰
+          </button>
+          <span className="text-sm font-semibold text-gray-200 truncate">
+            {activeRoom
+              ? activeRoom.visibility === 'DIRECT'
+                ? activeRoom.name.replace('dm:', '').replace(':', ' / ')
+                : `# ${activeRoom.name}`
+              : 'LinkUp'}
+          </span>
+        </div>
+
+        {/* Content */}
+        <div className="flex flex-1 overflow-hidden">
+          {activeRoomId ? (
+            <>
+              <ChatWindow roomId={activeRoomId} room={activeRoom} />
+              {activeRoom?.visibility !== 'DIRECT' && (
+                <MemberList roomId={activeRoomId} room={activeRoom} />
+              )}
+            </>
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center text-center gap-3 text-gray-600">
+              <p className="text-5xl">💬</p>
+              <p className="text-lg font-medium text-gray-500">Welcome to LinkUp</p>
+              <p className="text-sm px-6">Select a room from the sidebar, or browse public rooms to join one.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/auth'
 import MessageItem from './MessageItem'
 import MessageInput from './MessageInput'
 
-export default function ChatWindow({ roomId, room, mobileMenuButton }) {
+export default function ChatWindow({ roomId, room }) {
   const { messages, loadMessages, sendMessage, members } = useChatStore()
   const user = useAuthStore(s => s.user)
   const msgs = messages[roomId] || []
@@ -69,7 +69,6 @@ export default function ChatWindow({ roomId, room, mobileMenuButton }) {
     <div className="flex flex-col flex-1 overflow-hidden bg-gray-900">
       {/* Header */}
       <div className="flex items-center px-4 py-3 border-b border-gray-700/50 bg-gray-900 flex-shrink-0">
-        {mobileMenuButton}
         <div>
           <h2 className="font-semibold text-gray-100">{roomDisplayName}</h2>
           {room?.description && <p className="text-xs text-gray-500 mt-0.5">{room.description}</p>}
