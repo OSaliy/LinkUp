@@ -1,4 +1,4 @@
-import { createWriteStream, mkdirSync } from 'fs'
+import { createWriteStream, createReadStream, mkdirSync, statSync } from 'fs'
 import { join, extname } from 'path'
 import { v4 as uuidv4 } from 'uuid'
 import { pipeline } from 'stream/promises'
@@ -91,6 +91,13 @@ export default async function filesRoutes(app) {
     })
     if (!member) return reply.code(403).send({ error: 'Access denied' })
 
-    return reply.sendFile(attachment.storagePath)
+    const filePath = join(UPLOADS_DIR, attachment.storagePath)
+    let stat
+    try { stat = statSync(filePath) } catch { return reply.code(404).send({ error: 'File not found' }) }
+
+    reply.header('Content-Type', attachment.mimeType)
+    reply.header('Content-Length', stat.size)
+    reply.header('Content-Disposition', `inline; filename="${attachment.originalName}"`)
+    return reply.send(createReadStream(filePath))
   })
 }
