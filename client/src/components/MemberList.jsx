@@ -38,6 +38,7 @@ export default function MemberList({ roomId, room }) {
   const roomMembers = members[roomId] || []
   const [menuUserId, setMenuUserId] = useState(null)
   const [kicking, setKicking] = useState(null)
+  const [blocking, setBlocking] = useState(null)
 
   useEffect(() => { loadMembers(roomId) }, [roomId])
 
@@ -60,6 +61,12 @@ export default function MemberList({ roomId, room }) {
     await api.delete(`/rooms/${roomId}/members/${kicking.userId}`)
     loadMembers(roomId)
     setKicking(null)
+  }
+
+  const blockUser = async () => {
+    await api.post('/contacts/bans', { userId: blocking.userId })
+    setBlocking(null)
+    setMenuUserId(null)
   }
 
   const promoteAdmin = async (userId) => {
@@ -91,12 +98,13 @@ export default function MemberList({ roomId, room }) {
                 const status = presence[m.userId] || 'offline'
                 const isTargetOwner = m.userId === room?.ownerId
                 const canManage = (isAdmin || isOwner) && m.userId !== currentUser?.id && !isTargetOwner
+                const canInteract = m.userId !== currentUser?.id
 
                 return (
                   <div key={m.id} className="relative px-2">
                     <div
-                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg group transition-colors ${canManage ? 'cursor-pointer hover:bg-gray-800' : 'hover:bg-gray-800/50'}`}
-                      onClick={e => { e.stopPropagation(); canManage && setMenuUserId(menuUserId === m.userId ? null : m.userId) }}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg group transition-colors ${canInteract ? 'cursor-pointer hover:bg-gray-800' : 'hover:bg-gray-800/50'}`}
+                      onClick={e => { e.stopPropagation(); canInteract && setMenuUserId(menuUserId === m.userId ? null : m.userId) }}
                     >
                       <div className="relative shrink-0">
                         <div className="w-7 h-7 rounded-full bg-indigo-800 flex items-center justify-center text-xs font-bold">
@@ -117,22 +125,30 @@ export default function MemberList({ roomId, room }) {
                       </div>
                     </div>
 
-                    {menuUserId === m.userId && canManage && (
+                    {menuUserId === m.userId && canInteract && (
                       <div
                         className="absolute right-0 top-9 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-30 py-1 w-40 overflow-hidden"
                         style={{ right: '100%', marginRight: '4px', top: '0' }}
                         onClick={e => e.stopPropagation()}
                       >
-                        {isOwner && (
+                        {canManage && isOwner && (
                           m.role === 'ADMIN'
                             ? <button onClick={() => demoteAdmin(m.userId)} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-700 text-yellow-400 transition-colors">Remove admin</button>
                             : <button onClick={() => promoteAdmin(m.userId)} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-700 text-green-400 transition-colors">Make admin</button>
                         )}
+                        {canManage && (
+                          <button
+                            onClick={() => { setMenuUserId(null); setKicking(m) }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-700 text-red-400 transition-colors"
+                          >
+                            Ban from room
+                          </button>
+                        )}
                         <button
-                          onClick={() => { setMenuUserId(null); setKicking(m) }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-700 text-red-400 transition-colors"
+                          onClick={() => { setMenuUserId(null); setBlocking(m) }}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-700 text-orange-400 transition-colors"
                         >
-                          Ban from room
+                          Block user
                         </button>
                       </div>
                     )}
@@ -151,6 +167,15 @@ export default function MemberList({ roomId, room }) {
           confirmLabel="Ban"
           onConfirm={kickMember}
           onCancel={() => setKicking(null)}
+        />
+      )}
+      {blocking && (
+        <ConfirmDialog
+          title="Block user"
+          message={`Block @${blocking.user.username}? This removes your friendship, prevents messaging, and freezes any existing DM as read-only.`}
+          confirmLabel="Block"
+          onConfirm={blockUser}
+          onCancel={() => setBlocking(null)}
         />
       )}
     </>
