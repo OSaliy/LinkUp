@@ -18,7 +18,10 @@ export default function Sidebar({ onRoomSelect }) {
   const [friendRequestCount, setFriendRequestCount] = useState(0)
 
   const refreshFriendCount = () =>
-    api.get('/contacts/requests').then(r => setFriendRequestCount(r.data.length)).catch(() => {})
+    Promise.all([
+      api.get('/contacts/requests').then(r => r.data.length).catch(() => 0),
+      api.get('/rooms/invitations/pending').then(r => r.data.length).catch(() => 0),
+    ]).then(([req, inv]) => setFriendRequestCount(req + inv))
 
   useEffect(() => {
     loadRooms()

@@ -211,6 +211,25 @@ export default async function roomsRoutes(app) {
     return { ok: true }
   })
 
+  // List pending invitations for current user
+  app.get('/invitations/pending', { preHandler: app.authenticate }, async (req) => {
+    return app.db.roomInvitation.findMany({
+      where: { inviteeId: req.user.id },
+      include: {
+        room: { select: { id: true, name: true, description: true } },
+        inviter: { select: { id: true, username: true } },
+      },
+    })
+  })
+
+  // Decline invitation
+  app.delete('/:id/invitations', { preHandler: app.authenticate }, async (req, reply) => {
+    await app.db.roomInvitation.deleteMany({
+      where: { roomId: req.params.id, inviteeId: req.user.id },
+    })
+    return { ok: true }
+  })
+
   // Invite to private room
   app.post('/:id/invitations', { preHandler: app.authenticate }, async (req, reply) => {
     const { username } = req.body

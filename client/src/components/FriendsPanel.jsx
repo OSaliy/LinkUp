@@ -7,17 +7,20 @@ export default function FriendsPanel({ onClose }) {
   const [tab, setTab] = useState('friends')
   const [friends, setFriends] = useState([])
   const [requests, setRequests] = useState([])
+  const [invites, setInvites] = useState([])
   const [loading, setLoading] = useState(true)
   const { loadRooms, setActiveRoom } = useChatStore()
 
   const load = async () => {
     setLoading(true)
-    const [f, r] = await Promise.all([
+    const [f, r, inv] = await Promise.all([
       api.get('/contacts').then(x => x.data).catch(() => []),
       api.get('/contacts/requests').then(x => x.data).catch(() => []),
+      api.get('/rooms/invitations/pending').then(x => x.data).catch(() => []),
     ])
     setFriends(f)
     setRequests(r)
+    setInvites(inv)
     setLoading(false)
   }
 
@@ -40,9 +43,23 @@ export default function FriendsPanel({ onClose }) {
     load()
   }
 
+  const acceptInvite = async (roomId) => {
+    await api.post(`/rooms/${roomId}/invitations/accept`)
+    await loadRooms()
+    load()
+  }
+
+  const declineInvite = async (roomId) => {
+    await api.delete(`/rooms/${roomId}/invitations`)
+    load()
+  }
+
+  const totalBadge = requests.length + invites.length
+
   const tabs = [
     { id: 'friends', label: 'Friends' },
     { id: 'requests', label: 'Requests', badge: requests.length },
+    { id: 'invites', label: 'Invites', badge: invites.length },
     { id: 'add', label: 'Add Friend' },
   ]
 
@@ -131,6 +148,40 @@ export default function FriendsPanel({ onClose }) {
           </div>
         )}
 
+        {tab === 'invites' && (
+          <div className="p-4 space-y-2">
+            {loading && <p className="text-sm text-gray-500 text-center py-6">Loading…</p>}
+            {!loading && invites.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-3xl mb-2">📨</p>
+                <p className="text-sm text-gray-500">No pending room invitations</p>
+              </div>
+            )}
+            {invites.map(inv => (
+              <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-700/40 border border-gray-700">
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-200 font-medium"># {inv.room.name}</p>
+                  {inv.room.description && <p className="text-xs text-gray-400 truncate mt-0.5">{inv.room.description}</p>}
+                  <p className="text-xs text-gray-500 mt-0.5">from @{inv.inviter.username}</p>
+                </div>
+                <div className="flex gap-1.5 ml-3 shrink-0">
+                  <button
+                    onClick={() => acceptInvite(inv.room.id)}
+                    className="text-xs bg-green-700 hover:bg-green-600 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => declineInvite(inv.room.id)}
+                    className="text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {tab === 'add' && <AddFriendTab onSent={load} />}
       </div>
     </Modal>

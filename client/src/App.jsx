@@ -81,8 +81,7 @@ export default function App() {
     })
 
     socket.on('room:invited', ({ roomName, invitedBy }) => {
-      addNotif('📨', `Invited to #${roomName}`, `${invitedBy} invited you`)
-      loadRooms()
+      addNotif('📨', `Invited to #${roomName}`, `${invitedBy} invited you — check Friends & DMs`)
     })
 
     socket.on('friend:request', ({ from }) => {
